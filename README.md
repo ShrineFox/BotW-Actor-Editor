@@ -1,7 +1,7 @@
 # BotW Actor Editor
 C# Program to automate swapping Actor Pack physics files using Python
 
-![](https://i.imgur.com/NhhaDB7.png)
+![](https://i.imgur.com/Nx5181h.png)
 
 **BotW Actor Editor** makes it easy to get one Actor in BotW to use the physics of another.
 # Usage
