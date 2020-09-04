@@ -340,7 +340,7 @@ namespace BotWPhysicsReplacer
                     {
                         Log($"Could not find Python script \"{script}\" at {exePath}");
                         Log($"Attempting to install \"{script}\"...");
-                        RunCMD($"{pythonPath} -m pip install {script.Split('_').Last()}", false);
+                        RunCMD($"{pythonPath} -m pip install {script.Split('_').First()}", false);
                         Log($"\"{script}\" installed, try rebuilding sbactorpack again.");
                         return false;
                     }
