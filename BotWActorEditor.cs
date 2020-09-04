@@ -14,29 +14,31 @@ using System.Windows.Forms;
 
 namespace BotWPhysicsReplacer
 {
-    public partial class BotwPhysicsReplacerForm : Form
+    public partial class BotWActorEditor : Form
     {
         public string originalActorPath = "";
+        public List<string> originalActors = new List<string>();
+        public List<string> originalActorDirs = new List<string>();
+
         public string replaceActorPath = "";
-        public string originalDirectory = "";
         public string replaceDirectory = "";
         public string pythonPath = "";
-        public string physicsUser = "";
 
-        public BotwPhysicsReplacerForm()
+        public BotWActorEditor()
         {
             InitializeComponent();
 #if DEBUG
-            //pythonPath = @"C:\Users\Ryan\AppData\Local\Programs\Python\Python38\python.exe";
             originalActorPath = @"C:\Users\ryans\Desktop\Mipha\Armor_001_Lower.sbactorpack";
-            replaceActorPath = @"C:\Users\ryans\Desktop\Mipha\Dm_Npc_Zora_Hero.sbactorpack";
+            //replaceActorPath = @"C:\Users\ryans\Desktop\Mipha\Dm_Npc_Zora_Hero.sbactorpack";
 #endif
-            if (File.Exists(originalActorPath) && File.Exists(replaceActorPath))
+            if (File.Exists(originalActorPath))
             {
                 lbl_OriginalActor.Text = Path.GetFileNameWithoutExtension(originalActorPath);
-                lbl_ReplaceActor.Text = Path.GetFileNameWithoutExtension(replaceActorPath);
                 btn_RebuildActor.Enabled = true;
             }
+            if (File.Exists(replaceActorPath))
+                lbl_ReplaceActor.Text = Path.GetFileNameWithoutExtension(replaceActorPath);
+
         }
 
         private void Original_DragEnter(object sender, DragEventArgs e)
@@ -52,11 +54,11 @@ namespace BotWPhysicsReplacer
         private void Original_DragDrop(object sender, DragEventArgs e)
         {
             var data = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            if (File.Exists(data[0]) && Path.GetExtension(data[0]).ToLower() == ".sbactorpack")
+            if (File.Exists(data[0]) && Path.GetExtension(data[0]).ToLower() == ".sbactorpack" || Directory.Exists(data[0]))
             {
                 originalActorPath = data[0];
                 lbl_OriginalActor.Text = Path.GetFileNameWithoutExtension(data[0]);
-                if (lbl_OriginalActor.Text != "" && lbl_ReplaceActor.Text != "")
+                if (lbl_OriginalActor.Text != "")
                     btn_RebuildActor.Enabled = true;
             }
         }
@@ -68,7 +70,7 @@ namespace BotWPhysicsReplacer
             {
                 replaceActorPath = data[0];
                 lbl_ReplaceActor.Text = Path.GetFileNameWithoutExtension(data[0]);
-                if (lbl_OriginalActor.Text != "" && lbl_ReplaceActor.Text != "")
+                if (lbl_OriginalActor.Text != "")
                     btn_RebuildActor.Enabled = true;
             }
         }
@@ -79,58 +81,82 @@ namespace BotWPhysicsReplacer
             txtBox_Output.Text = "";
             if (PythonCheck())
             {
-                //Extract 1st sarc to folder
-                Log($"Extracting {Path.GetFileName(originalActorPath)}...");
-                RunCMD($"{pythonPath} -m sarc extract {originalActorPath}");
-                //Extract 2nd sarc to folder
-                Log($"Extracting {Path.GetFileName(replaceActorPath)}...");
-                RunCMD($"{pythonPath} -m sarc extract {replaceActorPath}");
+                //Extract SARC 1 to folder
+                if (originalActorPath != "")
+                {
+                    //Check if SARC 1 path is a directory or single .sbactorpack
+                    FileAttributes attr = File.GetAttributes(originalActorPath);
+                    if (attr.HasFlag(FileAttributes.Directory))
+                        foreach (var file in Directory.GetFiles(originalActorPath, "*.sbactorpack"))
+                            originalActors.Add(file);
+                    else if (Path.GetExtension(originalActorPath) == ".sbactorpack")
+                        originalActors.Add(originalActorPath);
+
+                    //Extract each original SARC's contents to own folder
+                    foreach (var actor in originalActors)
+                    {
+                        Log($"Extracting {Path.GetFileName(actor)}...");
+                        RunCMD($"{pythonPath} -m sarc extract {actor}");
+                        originalActorDirs.Add(Path.Combine(Path.GetDirectoryName(actor), Path.GetFileNameWithoutExtension(actor)));
+                    }
+                }
+
+                //Extract SARC 2 to folder (optional)
+                if (replaceActorPath != "" && File.Exists(replaceActorPath))
+                {
+                    Log($"Extracting {Path.GetFileName(replaceActorPath)}...");
+                    RunCMD($"{pythonPath} -m sarc extract {replaceActorPath}");
+                    replaceDirectory = Path.Combine(Path.GetDirectoryName(replaceActorPath), Path.GetFileNameWithoutExtension(replaceActorPath));
+                }
 
                 //Wait for SARCs to be extracted
-                originalDirectory = Path.Combine(Path.GetDirectoryName(originalActorPath), Path.GetFileNameWithoutExtension(originalActorPath));
-                replaceDirectory = Path.Combine(Path.GetDirectoryName(replaceActorPath), Path.GetFileNameWithoutExtension(replaceActorPath));
-                while (!Directory.Exists(replaceDirectory)) { }
-                Log($"Done extracting SARCs.");
+                while (!Directory.Exists(originalActorDirs[0])) { }
+                Log($"SARC extraction complete.");
 
-                //If SARCs both extracted successfully...
-                if (VerifySARC())
+                //If SARC 2 is extracted...
+                if (replaceDirectory != "" && Directory.Exists(replaceDirectory))
                 {
                     //Replace PhysicsUser value in SARC 1 .bxml w/ SARC 2 PhysicsUser
-                    ChangeSARCValue("bxml", "PhysicsUser", $"{Path.GetFileNameWithoutExtension(replaceActorPath)}");
-
+                    ChangeSARCValue("bxml", new List<Tuple<string, string>>() { new Tuple<string, string>("PhysicsUser", Path.GetFileNameWithoutExtension(replaceActorPath))});
                     //Delete .bphysics in SARC 1, Add .bphysics from SARC 2
                     SwapSARCFiles("bphysics");
                     //Delete Cloth .hkcl in SARC 1, Add Cloth .hkcl from SARC 2
                     SwapSARCFiles("hkcl");
                     //Delete Support Bone .bphyssb in SARC 1, Add Support Bone .bphyssb from SARC 2
                     SwapSARCFiles("bphyssb");
+                }
 
-                    //Edit baiprog if checked
-                    if (chkBox_Waterfall.Checked)
-                    {
-                        ChangeSARCValue("bgparamlist", "EnableClimbWaterfall", "true");
-                        ChangeSARCValue("bgparamlist", "EnableSpinAttack", "true");
-                    }
+                //Edit AAMP files if options are checked
+                var bgparamlistChanges = new List<Tuple<string, string>>();
+                if (chkBox_Waterfall.Checked)
+                    bgparamlistChanges.Add(new Tuple<string, string>("EnableClimbWaterfall", "true"));
+                if (chkBox_SpinAttack.Checked)
+                    bgparamlistChanges.Add(new Tuple<string, string>("EnableSpinAttack", "true"));
+                if (bgparamlistChanges.Count > 0)
+                    ChangeSARCValue("bgparamlist", bgparamlistChanges);
 
-                    //Resave and Output as Switch/Wii U .sbactorpacks
-                    SaveSARC();
+                //Resave and Output as Switch/Wii U .sbactorpacks
+                SaveSARC();
 
-                    //Delete temporary folders
+                //Delete temporary folders
+                if (!chkBox_KeepSARC.Checked)
+                {
                     Log("Deleting temporary folders...");
-                    if (Directory.Exists(originalDirectory))
-                        Directory.Delete(originalDirectory, true);
+                    foreach (var folder in originalActorDirs)
+                        if (Directory.Exists(folder))
+                            Directory.Delete(folder, true);
                     if (Directory.Exists(replaceDirectory))
                         Directory.Delete(replaceDirectory, true);
-
-                    Log("Done!");
                 }
+
+                Log("Done!");
             }
         }
 
         private void SaveSARC()
         {
-            string wiiUDir = Path.Combine(Path.GetDirectoryName(originalDirectory), "Wii U");
-            string switchDir = Path.Combine(Path.GetDirectoryName(originalDirectory), "Switch");
+            string wiiUDir = Path.Combine(Path.GetDirectoryName(originalActorDirs[0]), "Wii U");
+            string switchDir = Path.Combine(Path.GetDirectoryName(originalActorDirs[0]), "Switch");
             if (Directory.Exists(wiiUDir))
                 Directory.Delete(wiiUDir, true);
             if (Directory.Exists(switchDir))
@@ -143,81 +169,82 @@ namespace BotWPhysicsReplacer
 
             while (!Directory.Exists(switchDir)) { }
 
-            Log("Saving Wii U .sbactorpack");
-            RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\sarc.exe")} create --be \"{originalDirectory}\" \"{Path.Combine(wiiUDir, Path.GetFileName(originalActorPath))}\"");
-            Log("Saving Switch .sbactorpack");
-            RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\sarc.exe")} create \"{originalDirectory}\" \"{Path.Combine(switchDir, Path.GetFileName(originalActorPath))}\"");
-        }
-
-        private bool VerifySARC()
-        {
-            if (!Directory.Exists(originalDirectory))
+            Log("Saving new .sbactorpack files...");
+            foreach (var dir in originalActorDirs)
             {
-                Log($"Failed to extract {Path.GetFileName(originalDirectory)}.");
-                return false;
+                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\sarc.exe")} create --be \"{dir}\" \"{Path.Combine(wiiUDir, Path.GetFileNameWithoutExtension(dir) + ".sbactorpack")}\"");
+                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\sarc.exe")} create \"{dir}\" \"{Path.Combine(switchDir, Path.GetFileNameWithoutExtension(dir) + ".sbactorpack")}\"");
             }
-            else if (!Directory.Exists(replaceDirectory))
-            {
-                Log($"Failed to extract {Path.GetFileName(originalDirectory)}.");
-                return false;
-            }
-            return true;
         }
 
         private void SwapSARCFiles(string extension)
         {
             string sarc2AAMPPath = "";
-
-            foreach (var aampFile in Directory.GetFiles(originalDirectory, $"*.{extension}", SearchOption.AllDirectories))
+            foreach (var dir in originalActorDirs)
             {
-                foreach (var aampFile2 in Directory.GetFiles(replaceDirectory, $"*.{extension}", SearchOption.AllDirectories))
-                    sarc2AAMPPath = aampFile2;
-                File.Delete(aampFile);
-                Log($"Replacing {Path.GetFileName(aampFile)} with {Path.GetFileName(sarc2AAMPPath)}...");
-                if (File.Exists(Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(sarc2AAMPPath))))
-                    File.Delete(Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(sarc2AAMPPath)));
-                File.Copy(sarc2AAMPPath, Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(sarc2AAMPPath)));
+                foreach (var aampFile in Directory.GetFiles(dir, $"*.{extension}", SearchOption.AllDirectories))
+                {
+                    foreach (var aampFile2 in Directory.GetFiles(replaceDirectory, $"*.{extension}", SearchOption.AllDirectories))
+                        sarc2AAMPPath = aampFile2;
+                    File.Delete(aampFile);
+                    Log($"Replacing {Path.GetFileName(aampFile)} with {Path.GetFileName(sarc2AAMPPath)}...");
+                    if (File.Exists(Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(sarc2AAMPPath))))
+                        File.Delete(Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(sarc2AAMPPath)));
+                    File.Copy(sarc2AAMPPath, Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(sarc2AAMPPath)));
+                }
             }
+            
         }
 
-        private void ChangeSARCValue(string extension = "aamp", string oldLine = "", string newLine = "")
+        private void ChangeSARCValue(string extension, List<Tuple<string, string>> changes)
         {
-            foreach (var aampFile in Directory.GetFiles(originalDirectory, $"*.{extension}", SearchOption.AllDirectories))
+            foreach (var dir in originalActorDirs)
             {
-                //Convert bxml to YML for editing
-                string ymlFile = Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(aampFile)) + ".yml";
-                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} {aampFile} {ymlFile}");
+                foreach (var aampFile in Directory.GetFiles(dir, $"*.{extension}", SearchOption.AllDirectories))
+                {
+                    //Convert bxml to YML for editing
+                    string ymlFile = Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(aampFile)) + ".yml";
+                    RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} {aampFile} {ymlFile}");
 
-                //Wait for YML file to be created
-                while(!File.Exists(ymlFile)) { }
-                Thread.Sleep(1000);
+                    //Wait for YML file to be created
+                    while (!File.Exists(ymlFile)) { }
+                    Thread.Sleep(1000);
 
-                //Replace PhysicsUser line with SARC 2 name
-                string[] fileText = File.ReadAllLines(ymlFile);
-                for (int i = 0; i < fileText.Count(); i++)
-                    if (fileText[i].Contains($"{oldLine}: "))
-                        fileText[i] = $"{oldLine}: {newLine}".PadLeft(fileText[i].IndexOf(oldLine), ' ');
+                    //Replace each matching line with changed value
+                    string[] fileText = File.ReadAllLines(ymlFile);
+                    foreach (var change in changes)
+                    {
+                        Log($"Setting {change.Item1} to {change.Item2} in {Path.GetFileName(dir)}...");
+                        for (int i = 0; i < fileText.Count(); i++)
+                            if (fileText[i].Contains($"{change.Item1}: "))
+                                fileText[i] = $"{change.Item1}: {change.Item2}".PadLeft(fileText[i].IndexOf(change.Item1), ' ');
+                    }
 
-                //Overwrite YML with changes
-                File.WriteAllLines(ymlFile, fileText);
+                    //Overwrite YML with changes
+                    File.WriteAllLines(ymlFile, fileText);
 
-                //Wait for YML file to be updated
-                Thread.Sleep(1000);
+                    //Wait for YML file to be updated
+                    Thread.Sleep(1000);
 
-                //Create new AAMP from YML, overwriting original
-                Log($"Setting {oldLine} to {newLine} in {Path.GetFileName(originalDirectory)}...");
-                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\yml_to_aamp.exe")} {ymlFile} {aampFile}");
+                    //Create new AAMP from YML, overwriting original
+                    RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\yml_to_aamp.exe")} {ymlFile} {aampFile}");
 
-                //Wait for AAMP file to be overwritten
-                Thread.Sleep(500);
+                    //Wait for AAMP file to be overwritten
+                    Thread.Sleep(1000);
 
-                //Move YML file to new directory for reference
-                string newDir = Path.Combine(Path.GetDirectoryName(originalActorPath), $"{Path.GetFileNameWithoutExtension(originalActorPath)}_Edited_YML");
-                string newFile = Path.Combine(newDir, Path.GetFileName(ymlFile));
-                Directory.CreateDirectory(newDir);
-                if (File.Exists(newFile))
-                    File.Delete(newFile);
-                File.Move(ymlFile, newFile);
+                    //Move YML file to new directory for reference or delete
+                    string newDir = Path.Combine(Path.GetDirectoryName(dir), $"{Path.GetFileNameWithoutExtension(dir)}_Edited_YML");
+                    string newFile = Path.Combine(newDir, Path.GetFileName(ymlFile));
+                    if (chkBox_KeepYML.Checked)
+                    {
+                        Directory.CreateDirectory(newDir);
+                        if (File.Exists(newFile))
+                            File.Delete(newFile);
+                        File.Move(ymlFile, newFile);
+                    }
+                    else
+                        File.Delete(ymlFile);
+                }
             }
         }
 
