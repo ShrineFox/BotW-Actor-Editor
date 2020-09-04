@@ -41,6 +41,8 @@
             this.chkBox_KeepYML = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.chkBox_KeepSARC = new System.Windows.Forms.CheckBox();
+            this.lbl_bxml = new System.Windows.Forms.Label();
+            this.chkBox_ReplacePhys = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // btn_OriginalActor
@@ -86,11 +88,11 @@
             this.chkBox_Waterfall.AutoSize = true;
             this.chkBox_Waterfall.Checked = true;
             this.chkBox_Waterfall.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkBox_Waterfall.Location = new System.Drawing.Point(394, 30);
+            this.chkBox_Waterfall.Location = new System.Drawing.Point(394, 82);
             this.chkBox_Waterfall.Margin = new System.Windows.Forms.Padding(4);
             this.chkBox_Waterfall.Name = "chkBox_Waterfall";
             this.chkBox_Waterfall.Size = new System.Drawing.Size(172, 21);
-            this.chkBox_Waterfall.TabIndex = 7;
+            this.chkBox_Waterfall.TabIndex = 9;
             this.chkBox_Waterfall.Text = "Enable Waterfall Climb";
             this.chkBox_Waterfall.UseVisualStyleBackColor = true;
             // 
@@ -127,11 +129,11 @@
             this.chkBox_SpinAttack.AutoSize = true;
             this.chkBox_SpinAttack.Checked = true;
             this.chkBox_SpinAttack.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkBox_SpinAttack.Location = new System.Drawing.Point(394, 53);
+            this.chkBox_SpinAttack.Location = new System.Drawing.Point(394, 105);
             this.chkBox_SpinAttack.Margin = new System.Windows.Forms.Padding(4);
             this.chkBox_SpinAttack.Name = "chkBox_SpinAttack";
             this.chkBox_SpinAttack.Size = new System.Drawing.Size(149, 21);
-            this.chkBox_SpinAttack.TabIndex = 8;
+            this.chkBox_SpinAttack.TabIndex = 10;
             this.chkBox_SpinAttack.Text = "Enable Spin Attack";
             this.chkBox_SpinAttack.UseVisualStyleBackColor = true;
             // 
@@ -144,17 +146,17 @@
             this.chkBox_KeepYML.Margin = new System.Windows.Forms.Padding(4);
             this.chkBox_KeepYML.Name = "chkBox_KeepYML";
             this.chkBox_KeepYML.Size = new System.Drawing.Size(185, 21);
-            this.chkBox_KeepYML.TabIndex = 9;
+            this.chkBox_KeepYML.TabIndex = 11;
             this.chkBox_KeepYML.Text = "Keep Modified YML Files";
             this.chkBox_KeepYML.UseVisualStyleBackColor = true;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(393, 9);
+            this.label1.Location = new System.Drawing.Point(393, 61);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(85, 17);
-            this.label1.TabIndex = 6;
+            this.label1.TabIndex = 8;
             this.label1.Text = ".bgparamlist";
             // 
             // chkBox_KeepSARC
@@ -164,15 +166,39 @@
             this.chkBox_KeepSARC.Margin = new System.Windows.Forms.Padding(4);
             this.chkBox_KeepSARC.Name = "chkBox_KeepSARC";
             this.chkBox_KeepSARC.Size = new System.Drawing.Size(179, 21);
-            this.chkBox_KeepSARC.TabIndex = 10;
+            this.chkBox_KeepSARC.TabIndex = 12;
             this.chkBox_KeepSARC.Text = "Keep Unpacked SARCs";
             this.chkBox_KeepSARC.UseVisualStyleBackColor = true;
+            // 
+            // lbl_bxml
+            // 
+            this.lbl_bxml.AutoSize = true;
+            this.lbl_bxml.Location = new System.Drawing.Point(393, 15);
+            this.lbl_bxml.Name = "lbl_bxml";
+            this.lbl_bxml.Size = new System.Drawing.Size(40, 17);
+            this.lbl_bxml.TabIndex = 6;
+            this.lbl_bxml.Text = ".bxml";
+            // 
+            // chkBox_ReplacePhys
+            // 
+            this.chkBox_ReplacePhys.AutoSize = true;
+            this.chkBox_ReplacePhys.Enabled = false;
+            this.chkBox_ReplacePhys.Location = new System.Drawing.Point(394, 36);
+            this.chkBox_ReplacePhys.Margin = new System.Windows.Forms.Padding(4);
+            this.chkBox_ReplacePhys.Name = "chkBox_ReplacePhys";
+            this.chkBox_ReplacePhys.Size = new System.Drawing.Size(164, 21);
+            this.chkBox_ReplacePhys.TabIndex = 7;
+            this.chkBox_ReplacePhys.Text = "Replace PhysicsUser";
+            this.chkBox_ReplacePhys.UseVisualStyleBackColor = true;
+            this.chkBox_ReplacePhys.CheckedChanged += new System.EventHandler(this.PhysicsUser_Unchecked);
             // 
             // BotWActorEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(620, 410);
+            this.ClientSize = new System.Drawing.Size(584, 410);
+            this.Controls.Add(this.lbl_bxml);
+            this.Controls.Add(this.chkBox_ReplacePhys);
             this.Controls.Add(this.chkBox_KeepSARC);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.chkBox_KeepYML);
@@ -207,6 +233,8 @@
         private System.Windows.Forms.CheckBox chkBox_KeepYML;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox chkBox_KeepSARC;
+        private System.Windows.Forms.Label lbl_bxml;
+        private System.Windows.Forms.CheckBox chkBox_ReplacePhys;
     }
 }
 
