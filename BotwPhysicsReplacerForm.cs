@@ -28,8 +28,8 @@ namespace BotWPhysicsReplacer
             InitializeComponent();
 #if DEBUG
             //pythonPath = @"C:\Users\Ryan\AppData\Local\Programs\Python\Python38\python.exe";
-            originalActorPath = @"C:\Users\Ryan\Desktop\Mipha\Armor_001_Upper.sbactorpack";
-            replaceActorPath = @"C:\Users\Ryan\Desktop\Mipha\Dm_Npc_Zora_Hero.sbactorpack";
+            originalActorPath = @"C:\Users\ryans\Desktop\Mipha\Armor_001_Lower.sbactorpack";
+            replaceActorPath = @"C:\Users\ryans\Desktop\Mipha\Dm_Npc_Zora_Hero.sbactorpack";
 #endif
             if (File.Exists(originalActorPath) && File.Exists(replaceActorPath))
             {
@@ -87,9 +87,10 @@ namespace BotWPhysicsReplacer
                 RunCMD($"{pythonPath} -m sarc extract {replaceActorPath}");
 
                 //Wait for SARCs to be extracted
-                Thread.Sleep(1000);
                 originalDirectory = Path.Combine(Path.GetDirectoryName(originalActorPath), Path.GetFileNameWithoutExtension(originalActorPath));
                 replaceDirectory = Path.Combine(Path.GetDirectoryName(replaceActorPath), Path.GetFileNameWithoutExtension(replaceActorPath));
+                while (!Directory.Exists(replaceDirectory)) { }
+                Log($"Done extracting SARCs.");
 
                 //If SARCs both extracted successfully...
                 if (VerifySARC())
@@ -140,7 +141,7 @@ namespace BotWPhysicsReplacer
             Directory.CreateDirectory(wiiUDir);
             Directory.CreateDirectory(switchDir);
 
-            Thread.Sleep(500);
+            while (!Directory.Exists(switchDir)) { }
 
             Log("Saving Wii U .sbactorpack");
             RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\sarc.exe")} create --be \"{originalDirectory}\" \"{Path.Combine(wiiUDir, Path.GetFileName(originalActorPath))}\"");
@@ -188,7 +189,8 @@ namespace BotWPhysicsReplacer
                 RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} {aampFile} {ymlFile}");
 
                 //Wait for YML file to be created
-                Thread.Sleep(500);
+                while(!File.Exists(ymlFile)) { }
+                Thread.Sleep(1000);
 
                 //Replace PhysicsUser line with SARC 2 name
                 string[] fileText = File.ReadAllLines(ymlFile);
@@ -200,7 +202,7 @@ namespace BotWPhysicsReplacer
                 File.WriteAllLines(ymlFile, fileText);
 
                 //Wait for YML file to be updated
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
 
                 //Create new AAMP from YML, overwriting original
                 Log($"Setting {oldLine} to {newLine} in {Path.GetFileName(originalDirectory)}...");
