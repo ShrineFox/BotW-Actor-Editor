@@ -91,9 +91,9 @@ namespace BotWPhysicsReplacer
                     //If Target SARC is extracted...
                     if (Directory.Exists(targetActorDir))
                     {
-                        string bfresFolderName = GetAAMPValue(sourceActorDir, "bmodellist", "Folder: ");
-                        string unitName = GetAAMPValue(sourceActorDir, "bmodellist", "Unit_Name: ");
-                        string actorName = Path.GetFileNameWithoutExtension(actor);
+                        string unitName = GetAAMPValue(sourceActorDir, "bmodellist", "UnitName: "); //Armor_001_Head_A
+                        string actorName = Path.GetFileNameWithoutExtension(actor); //Armor_001_Head
+                        string bfresFolderName = GetAAMPValue(sourceActorDir, "bmodellist", "Folder: "); //Armor_001
 
                         //If BFRES Name is obtainable...
                         if (bfresFolderName != "")
@@ -101,11 +101,11 @@ namespace BotWPhysicsReplacer
                             //Replace Physics reference strings
                             ChangeSARCValue(sourceActorDir, "bphysics", new List<Tuple<string, string>>() { new Tuple<string, string>("support_bone_setup_file_path", $"{bfresFolderName}/{actorName}.bphysbb"), new Tuple<string, string>("cloth_setup_file_path", $"{bfresFolderName}/{actorName}.hkcl") });
                             //Delete .bphysics in Source SARC, Add .bphysics from Target SARC
-                            SwapSARCFiles(sourceActorDir, "bphysics", unitName, actorName);
+                            SwapSARCFiles(sourceActorDir, "bphysics", unitName, "");
                             //Delete Cloth .hkcl in Source SARC, Add Cloth .hkcl from Target SARC
-                            SwapSARCFiles(sourceActorDir, "hkcl", unitName, actorName);
+                            SwapSARCFiles(sourceActorDir, "hkcl", unitName, bfresFolderName);
                             //Delete Support Bone .bphyssb in Source SARC, Add Support Bone .bphyssb from Target SARC
-                            SwapSARCFiles(sourceActorDir, "bphyssb", unitName, actorName);
+                            SwapSARCFiles(sourceActorDir, "bphyssb", unitName, bfresFolderName);
                         }
                         else
                             Log("Could not obtain BFRES Folder Name. Skipping physics...");
@@ -177,7 +177,7 @@ namespace BotWPhysicsReplacer
                 string[] fileText = File.ReadAllLines(ymlFile);
                 foreach (var line in fileText)
                     if (line.Contains(key))
-                        return line.Replace("!str64","").Split(':').LastOrDefault().Trim().Split(',').FirstOrDefault().Replace("}","");
+                        value = line.Remove(0, EndIndexOf(line, "!str64")).Split(' ')[1].Replace("}", "").Replace(",", "").Trim();
 
                 //Delete YML File
                 using (WaitForFile(ymlFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
@@ -206,7 +206,7 @@ namespace BotWPhysicsReplacer
             }
         }
 
-        private void SwapSARCFiles(string dir, string extension, string unitName, string actorName)
+        private void SwapSARCFiles(string dir, string extension, string fileName, string folderName)
         {
             //For each file in Target SARC with a matching extension...
             foreach (var aampFile2 in Directory.GetFiles(targetActorDir, $"*.{extension}", SearchOption.AllDirectories))
@@ -219,8 +219,8 @@ namespace BotWPhysicsReplacer
                 //Make path for new file
                 string destFile = dir + Path.GetDirectoryName(aampFile2).Remove(0, EndIndexOf(Path.GetDirectoryName(aampFile2), Path.GetFileName(targetActorDir)));
                 if (extension == "bphyssb" || extension == "hkcl")
-                    destFile = Path.Combine(Path.GetDirectoryName(destFile), actorName);
-                destFile = Path.Combine(destFile, Path.Combine(actorName, unitName)) +$".{extension}";
+                    destFile = Path.Combine(Path.GetDirectoryName(destFile), folderName);
+                destFile = Path.Combine(destFile, fileName) + $".{extension}";
 
                 //Delete existing destination file
                 if (File.Exists(destFile))
@@ -251,8 +251,10 @@ namespace BotWPhysicsReplacer
                     for (int i = 0; i < fileText.Count(); i++)
                         if (fileText[i].Contains($"{change.Item1}: "))
                         {
-                            Log($"Setting {change.Item1} in {Path.GetFileName(dir)}...");
-                            fileText[i] = $"{change.Item1}: {change.Item2.Replace("}/","/")}".PadLeft(fileText[i].IndexOf(change.Item1), ' ');
+                            int padAmnt = fileText[i].TakeWhile(Char.IsWhiteSpace).Count();
+                            Log($"Setting {change.Item1} to {change.Item1} in {Path.GetFileName(dir)}...");
+                            string newText = $"{change.Item1}: {change.Item2.Replace("}/", "/")}";
+                            fileText[i] = newText.PadLeft(padAmnt + newText.Length);
                         }
                 }
 
