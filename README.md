@@ -1,4 +1,4 @@
-![](https://i.imgur.com/cyCeDBd.png)
+![](https://i.imgur.com/cBVdTpW.png)
 
 **BotW Actor Editor** makes it easy to get one Actor in BotW to use the physics of another.
 
