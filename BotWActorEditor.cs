@@ -32,10 +32,6 @@ namespace BotWPhysicsReplacer
         public BotWActorEditor()
         {
             InitializeComponent();
-#if DEBUG
-            sourceActorPath = @"C:\Users\Ryan\Desktop\Mipha\Armor";
-            targetActorPath = @"C:\Users\Ryan\Desktop\Mipha\Dm_Npc_Zora_Hero.sbactorpack";
-#endif
             if (File.Exists(sourceActorPath) || Directory.Exists(sourceActorPath))
             {
                 lbl_SourceActor.Text = Path.GetFileNameWithoutExtension(sourceActorPath);
@@ -252,7 +248,7 @@ namespace BotWPhysicsReplacer
                         if (fileText[i].Contains($"{change.Item1}: "))
                         {
                             int padAmnt = fileText[i].TakeWhile(Char.IsWhiteSpace).Count();
-                            Log($"Setting {change.Item1} to {change.Item1} in {Path.GetFileName(dir)}...");
+                            Log($"Setting {change.Item1} to {change.Item2} in {Path.GetFileName(dir)}...");
                             string newText = $"{change.Item1}: {change.Item2.Replace("}/", "/")}";
                             fileText[i] = newText.PadLeft(padAmnt + newText.Length);
                         }
