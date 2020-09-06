@@ -144,7 +144,7 @@ namespace BotWPhysicsReplacer
             string extractedSARCDir = Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path));
             //Extract SARC
             Log($"Extracting {Path.GetFileName(path)}...");
-            RunCMD($"{pythonPath} -m sarc extract {path}");
+            RunCMD($"{pythonPath} -m sarc extract \"{path}\"");
 
             //Wait for SARC to be fully extracted
             WaitForPopulatedFolder(extractedSARCDir);
@@ -164,7 +164,7 @@ namespace BotWPhysicsReplacer
             {
                 //Convert AAMP to YML for reading
                 string ymlFile = Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(aampFile)) + ".yml";
-                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} {aampFile} {ymlFile}");
+                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} \"{aampFile}\" \"{ymlFile}\"");
 
                 //Wait for YML file to be created
                 using (WaitForFile(ymlFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
@@ -198,7 +198,8 @@ namespace BotWPhysicsReplacer
                 RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\sarc.exe")} create \"{dir}\" \"{Path.Combine(switchDir, Path.GetFileNameWithoutExtension(dir) + ".sbactorpack")}\"");
                 using (WaitForFile(Path.Combine(wiiUDir, Path.GetFileNameWithoutExtension(dir) + ".sbactorpack"), FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
                 using (WaitForFile(Path.Combine(switchDir, Path.GetFileNameWithoutExtension(dir) + ".sbactorpack"), FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
-                KillCMDProcesses();
+                if (!chkBox_CMD.Checked)
+                    KillCMDProcesses();
             }
         }
 
@@ -235,10 +236,11 @@ namespace BotWPhysicsReplacer
             {
                 //Convert AAMP to YML for editing
                 string ymlFile = Path.Combine(Path.GetDirectoryName(aampFile), Path.GetFileName(aampFile)) + ".yml";
-                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} {aampFile} {ymlFile}");
+                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\aamp_to_yml.exe")} \"{aampFile}\" \"{ymlFile}\"");
 
                 //Wait for YML file to be created
                 using (WaitForFile(ymlFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
+                Thread.Sleep(sleepTime);
 
                 //Replace each matching line with changed value
                 string[] fileText = File.ReadAllLines(ymlFile);
@@ -259,9 +261,10 @@ namespace BotWPhysicsReplacer
 
                 //Wait for YML file to be updated
                 using (WaitForFile(ymlFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
+                Thread.Sleep(sleepTime);
 
                 //Create new AAMP from YML, overwriting original
-                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\yml_to_aamp.exe")} {ymlFile} {aampFile}");
+                RunCMD($"{pythonPath.Replace("python.exe", "Scripts\\yml_to_aamp.exe")} \"{ymlFile}\" \"{aampFile}\"");
 
                 //Wait for AAMP file to be overwritten
                 using (WaitForFile(aampFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
@@ -422,7 +425,7 @@ namespace BotWPhysicsReplacer
             start.Arguments = $"/K {args}";
             start.UseShellExecute = true;
             start.RedirectStandardOutput = false;
-            if (hidden)
+            if (hidden && !chkBox_CMD.Checked)
             {
                 start.Arguments.Replace("/K", "/C");
                 start.WindowStyle = ProcessWindowStyle.Hidden;
