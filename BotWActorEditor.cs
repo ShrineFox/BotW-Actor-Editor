@@ -205,16 +205,16 @@ namespace BotWPhysicsReplacer
 
         private void SwapSARCFiles(string dir, string extension, string fileName, string folderName)
         {
-            //For each file in Target SARC with a matching extension...
-            foreach (var aampFile2 in Directory.GetFiles(targetActorDir, $"*.{extension}", SearchOption.AllDirectories))
-            {
-                //Delete files matching extension in Source SARC
-                foreach (var aampFile in Directory.GetFiles(dir, $"*.{extension}", SearchOption.AllDirectories))
-                    if (File.Exists(aampFile))
-                        File.Delete(aampFile);
+            //Delete files matching extension in Source SARC
+            foreach (var sourceAAMP in Directory.GetFiles(dir, $"*.{extension}", SearchOption.AllDirectories))
+                if (File.Exists(sourceAAMP))
+                    File.Delete(sourceAAMP);
 
+            //For each file in Target SARC with a matching extension...
+            foreach (var targetAAMP in Directory.GetFiles(targetActorDir, $"*.{extension}", SearchOption.AllDirectories))
+            {
                 //Make path for new file
-                string destFile = dir + Path.GetDirectoryName(aampFile2).Remove(0, EndIndexOf(Path.GetDirectoryName(aampFile2), Path.GetFileName(targetActorDir)));
+                string destFile = dir + Path.GetDirectoryName(targetAAMP).Remove(0, EndIndexOf(Path.GetDirectoryName(targetAAMP), Path.GetFileName(targetActorDir)));
                 if (extension == "bphyssb" || extension == "hkcl")
                     destFile = Path.Combine(Path.GetDirectoryName(destFile), folderName);
                 destFile = Path.Combine(destFile, fileName) + $".{extension}";
@@ -225,8 +225,8 @@ namespace BotWPhysicsReplacer
 
                 //Copy replacement file to new location
                 Directory.CreateDirectory(Path.GetDirectoryName(destFile));
-                File.Copy(aampFile2, destFile);
-                Log($"Copying {Path.GetFileName(aampFile2)} to {Path.GetFileName(dir)} as {Path.GetFileName(destFile)}...");                    
+                File.Copy(targetAAMP, destFile);
+                Log($"Copying {Path.GetFileName(targetAAMP)} to {Path.GetFileName(dir)} as {Path.GetFileName(destFile)}...");                    
             }
         }
 
