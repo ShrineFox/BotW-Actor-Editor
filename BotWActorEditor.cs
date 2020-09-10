@@ -393,7 +393,7 @@ namespace BotWPhysicsReplacer
         private bool PythonCheck()
         {
             //Check if python is installed, if so get python path
-            pythonPath = GetPythonPath("3.6.1");
+            pythonPath = GetPythonPath("3.6");
             if (pythonPath != "")
                 Log("Python install detected: " + pythonPath);
             else
