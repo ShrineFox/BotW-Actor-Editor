@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Syroot.NintenTools.Bfres;
 
 namespace BotWPhysicsReplacer
 {
@@ -23,6 +25,10 @@ namespace BotWPhysicsReplacer
         public string targetActorPath = "";
         public string targetActorDir = "";
 
+        public string sourceSbfresPath = "";
+        public string targetSbfresPath = "";
+        public string targetSbfresDir = "";
+
         public List<string> sourceActors = new List<string>();
         public List<string> sourceActorDirs = new List<string>();
 
@@ -33,12 +39,7 @@ namespace BotWPhysicsReplacer
         {
             InitializeComponent();
             if (File.Exists(sourceActorPath) || Directory.Exists(sourceActorPath))
-            {
-                lbl_SourceActor.Text = Path.GetFileNameWithoutExtension(sourceActorPath);
                 btn_RebuildActor.Enabled = true;
-            }
-            if (File.Exists(targetActorPath))
-                lbl_TargetActor.Text = Path.GetFileNameWithoutExtension(targetActorPath);
         }
 
         private void Rebuild_Click(object sender, EventArgs e)
@@ -507,33 +508,74 @@ namespace BotWPhysicsReplacer
             return index;
         }
 
+        /* FORM CONTROLS */
+
         private void KillCMDProcesses()
         {
             foreach (var process in Process.GetProcessesByName("cmd"))
                 process.Kill();
         }
 
-        /*
-         *       FORM CONTROLS
-         */
+        private void KillCMD_Click(object sender, EventArgs e)
+        {
+            KillCMDProcesses();
+        }
 
-        private void Original_DragEnter(object sender, DragEventArgs e)
+        /* Original Actors */
+
+        private void OriginalActorPacks_DragEnter(object sender, DragEventArgs e)
         {
             e.Effect = DragDropEffects.Move;
         }
 
-        private void Replace_DragEnter(object sender, DragEventArgs e)
+        private void OriginalActorPacks_DragDrop(object sender, DragEventArgs e)
+        {
+            var path = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            OpenOriginalSbactorpacks(path[0]);
+        }
+
+        private void OriginalActorPacks_BtnClick(object sender, EventArgs e)
+        {
+            string path = OpenFolder();
+            OpenOriginalSbactorpacks(path);
+        }
+
+        private void OriginalActorPacks_Click(object sender, EventArgs e)
+        {
+            string path = OpenFolder();
+            OpenOriginalSbactorpacks(path);
+        }
+
+        /* Target Actor */
+
+        private void TargetActorPacks_DragEnter(object sender, DragEventArgs e)
         {
             e.Effect = DragDropEffects.Move;
         }
 
-        private void Original_DragDrop(object sender, DragEventArgs e)
+        private void TargetActorPacks_DragDrop(object sender, DragEventArgs e)
         {
-            var data = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            if (File.Exists(data[0]) && Path.GetExtension(data[0]).ToLower() == ".sbactorpack" || Directory.Exists(data[0]))
+            var path = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            OpenTargetSbactorpack(path[0]);
+        }
+
+        private void TargetActorPacks_BtnClick(object sender, EventArgs e)
+        {
+            string path = OpenFile();
+            OpenTargetSbactorpack(path);
+        }
+
+        private void TargetActorPacks_Click(object sender, EventArgs e)
+        {
+            string path = OpenFile();
+            OpenTargetSbactorpack(path);
+        }
+
+        public void OpenOriginalSbactorpacks(string path)
+        {
+            if (File.Exists(path) && Path.GetExtension(path).ToLower() == ".sbactorpack" || Directory.Exists(path))
             {
-                sourceActorPath = data[0];
-                lbl_SourceActor.Text = Path.GetFileNameWithoutExtension(data[0]);
+                sourceActorPath = path;
                 if (File.Exists(sourceActorPath) || Directory.Exists(sourceActorPath))
                     btn_RebuildActor.Enabled = true;
                 else
@@ -541,23 +583,103 @@ namespace BotWPhysicsReplacer
             }
         }
 
-        private void Replace_DragDrop(object sender, DragEventArgs e)
+        public void OpenTargetSbactorpack(string path)
         {
-            var data = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            if (File.Exists(data[0]) && Path.GetExtension(data[0]).ToLower() == ".sbactorpack")
+            if (File.Exists(path) && Path.GetExtension(path).ToLower() == ".sbactorpack")
             {
-                targetActorPath = data[0];
-                lbl_TargetActor.Text = Path.GetFileNameWithoutExtension(data[0]);
-                if (File.Exists(targetActorPath))
-                    lbl_TargetActor.Text = Path.GetFileNameWithoutExtension(targetActorPath);
-                if (!File.Exists(targetActorPath))
+                targetActorPath = path;
+            }
+        }
+
+        public static string OpenFile()
+        {
+            CommonOpenFileDialog dialog = new CommonOpenFileDialog();
+            string filePath = "";
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                filePath = dialog.FileName;
+            }
+            return filePath;
+        }
+
+        public static string OpenFolder()
+        {
+            CommonOpenFileDialog dialog = new CommonOpenFileDialog();
+            dialog.IsFolderPicker = true;
+            string folderPath = "";
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                folderPath = dialog.FileName;
+            }
+            return folderPath;
+        }
+
+        /* Original Models */
+
+        private void OriginalSbfresFiles_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.Move;
+        }
+
+        private void OriginalSbfresFiles_DragDrop(object sender, DragEventArgs e)
+        {
+            var path = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            OpenOriginalSbfres(path[0]);
+        }
+
+        private void OriginalSbfresFiles_BtnClick(object sender, EventArgs e)
+        {
+            string path = OpenFolder();
+            OpenOriginalSbfres(path);
+        }
+
+        private void OriginalSbfresFiles_Click(object sender, EventArgs e)
+        {
+            string path = OpenFolder();
+            OpenOriginalSbfres(path);
+        }
+
+        /* Target Model */
+        private void TargetSbfres_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.Move;
+        }
+
+        private void TargetSbfres_DragDrop(object sender, DragEventArgs e)
+        {
+            var path = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            OpenTargetSbfres(path[0]);
+        }
+
+        private void TargetSbfres_BtnClick(object sender, EventArgs e)
+        {
+            string path = OpenFile();
+            OpenTargetSbfres(path);
+        }
+        private void TargetSbfres_Click(object sender, EventArgs e)
+        {
+            string path = OpenFile();
+            OpenTargetSbfres(path);
+        }
+
+        public void OpenOriginalSbfres(string path)
+        {
+            if (File.Exists(path) && Path.GetExtension(path).ToLower() == ".sbfres" || Directory.Exists(path))
+            {
+                sourceSbfresPath = path;
+                if (File.Exists(sourceActorPath) || Directory.Exists(sourceActorPath))
+                    btn_RebuildActor.Enabled = true;
+                else
                     btn_RebuildActor.Enabled = false;
             }
         }
 
-        private void KillCMD_Click(object sender, EventArgs e)
+        public void OpenTargetSbfres(string path)
         {
-            KillCMDProcesses();
+            if (File.Exists(path) && Path.GetExtension(path).ToLower() == ".sbfres")
+            {
+                targetSbfresPath = path;
+            }
         }
     }
 }
